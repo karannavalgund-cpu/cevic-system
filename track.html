@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrustChain – Track Complaint</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════
+   RESET & ROOT
+═══════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink:      #0f0e0a;
+  --cream:    #f5f0e8;
+  --amber:    #e8821a;
+  --amber-dk: #b55f0a;
+  --green:    #1a7a4a;
+  --red:      #c0392b;
+  --steel:    #2c3e50;
+  --muted:    #7a7065;
+  --border:   #c8bfb0;
+  --card-bg:  #faf7f2;
+  --shadow:   rgba(15,14,10,0.12);
+  --radius:   4px;
+  --mono:     'Space Mono', monospace;
+  --display:  'Syne', sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--mono);
+  background: var(--cream);
+  color: var(--ink);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+/* ═══════════════════════════════════════════════════════
+   NOISE TEXTURE OVERLAY
+═══════════════════════════════════════════════════════ */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 9999;
+}
+
+/* ═══════════════════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════════════════ */
+header {
+  background: var(--ink);
+  color: var(--cream);
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  border-bottom: 3px solid var(--amber);
+  position: sticky; top: 0; z-index: 100;
+}
+
+.logo {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+  display: flex; align-items: center; gap: 10px;
+}
+
+.logo-badge {
+  width: 28px; height: 28px;
+  background: var(--amber);
+  border-radius: 3px;
+  display: grid; place-items: center;
+  font-size: 14px;
+}
+
+nav { display: flex; gap: 6px; }
+
+nav a {
+  color: var(--cream);
+  text-decoration: none;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  border: 1px solid rgba(245,240,232,0.2);
+  border-radius: var(--radius);
+  transition: all 0.2s;
+}
+
+nav a:hover, nav a.active {
+  background: var(--amber);
+  border-color: var(--amber);
+  color: var(--ink);
+}
+
+/* ═══════════════════════════════════════════════════════
+   MAIN LAYOUT
+═══════════════════════════════════════════════════════ */
+main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+}
+
+/* ═══════════════════════════════════════════════════════
+   TRACK FORM
+═══════════════════════════════════════════════════════ */
+.track-strip {
+  background: var(--steel);
+  color: var(--cream);
+  padding: 2.5rem;
+  border-radius: var(--radius);
+  box-shadow: 0 4px 12px var(--shadow);
+}
+
+.track-strip h3 {
+  font-family: var(--display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: var(--amber);
+}
+
+.track-row {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.track-row input {
+  flex: 1;
+  min-width: 200px;
+  background: rgba(245,240,232,0.1);
+  border: 1px solid rgba(245,240,232,0.25);
+  color: var(--cream);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  transition: border-color 0.2s;
+}
+
+.track-row input::placeholder { color: rgba(245,240,232,0.4); }
+.track-row input:focus { outline: none; border-color: var(--amber); }
+
+.btn-track {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1rem;
+  background: var(--amber);
+  color: var(--ink);
+  border: none;
+  border-radius: var(--radius);
+  padding: 0 2rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-track:hover { background: var(--amber-dk); color: #fff; }
+
+/* ═══════════════════════════════════════════════════════
+   TRACK RESULT
+═══════════════════════════════════════════════════════ */
+#track-result { display: none; margin-top: 2rem; background: var(--card-bg); padding: 2rem; border-radius: var(--radius); color: var(--ink); border: 1px solid var(--border); box-shadow: 0 2px 8px var(--shadow); }
+
+.status-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 2px;
+  font-weight: 700;
+}
+
+.status-OPEN                { background: rgba(200,191,176,0.3); color: var(--muted); }
+.status-ASSIGNED            { background: rgba(232,130,26,0.15); color: var(--amber-dk); }
+.status-IN_PROGRESS         { background: rgba(52,152,219,0.15); color: #2980b9; }
+.status-PENDING_VERIFICATION{ background: rgba(155,89,182,0.15); color: #7d3c98; }
+.status-ESCALATED           { background: rgba(192,57,43,0.15);  color: var(--red); }
+.status-REOPENED            { background: rgba(192,57,43,0.15);  color: var(--red); }
+.status-CLOSED              { background: rgba(26,122,74,0.15);  color: var(--green); }
+
+.timeline-list { list-style: none; position: relative; padding-left: 1.5rem; margin-top: 1.5rem; }
+
+.timeline-list::before {
+  content: '';
+  position: absolute;
+  left: 6px; top: 0; bottom: 0;
+  width: 1px;
+  background: var(--border);
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 1.5rem;
+  font-size: 0.85rem;
+}
+
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -1.5rem; top: 5px;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--amber);
+  border: 2px solid var(--card-bg);
+}
+
+.timeline-actor { font-weight: 700; color: var(--steel); font-size: 0.95rem; }
+.timeline-action { color: var(--amber-dk); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.08em; }
+.timeline-time   { color: var(--muted); font-size: 0.75rem; display: block; margin-top: 2px;}
+
+.feedback-btns { display: flex; gap: 10px; margin-top: 1rem; }
+
+.btn-feedback {
+  flex: 1;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  padding: 10px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #fff;
+  font-weight: bold;
+}
+
+.btn-feedback.yes:hover { background: rgba(26,122,74,0.1); border-color: var(--green); color: var(--green); }
+.btn-feedback.no:hover  { background: rgba(192,57,43,0.1);  border-color: var(--red);   color: var(--red); }
+
+/* ═══════════════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════════════ */
+.toast {
+  position: fixed;
+  bottom: 1.5rem; right: 1.5rem;
+  background: var(--ink);
+  color: var(--cream);
+  font-size: 0.82rem;
+  padding: 12px 20px;
+  border-radius: var(--radius);
+  border-left: 3px solid var(--amber);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.3);
+  transform: translateY(20px);
+  opacity: 0;
+  transition: all 0.3s;
+  z-index: 1000;
+  max-width: 320px;
+}
+
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.success { border-color: var(--green); }
+.toast.error   { border-color: var(--red); }
+
+/* ═══════════════════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════════════════ */
+footer {
+  background: var(--ink);
+  color: rgba(245,240,232,0.45);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-align: center;
+  padding: 1.5rem;
+  border-top: 1px solid rgba(245,240,232,0.1);
+}
+footer strong { color: var(--amber); }
+.divider { height: 1px; background: var(--border); margin: 1.25rem 0; }
+</style>
+</head>
+
+<body>
+
+<!-- ── HEADER ──────────────────────────────────────────────────────────────── -->
+<header>
+  <div class="logo">
+    <div class="logo-badge">⛓</div>
+    TrustChain
+  </div>
+  <nav>
+    <a href="/">File Complaint</a>
+    <a href="/track" class="active">Track</a>
+    <a href="/officer">Officer Portal</a>
+  </nav>
+</header>
+
+<!-- ── MAIN ───────────────────────────────────────────────────────────────── -->
+<main>
+
+  <!-- TRACK STRIP -->
+  <div class="track-strip">
+    <h3>🔍 Track an Existing Complaint</h3>
+    <p style="margin-bottom: 1rem; font-size: 0.9rem; color: rgba(245,240,232,0.8);">Enter your unique complaint ID and the secret code generated when you filed the complaint.</p>
+    <div class="track-row">
+      <input type="text" id="track-id" placeholder="Complaint ID (TC-YYYYMMDD-XXXXXX)">
+      <input type="text" id="track-secret" placeholder="Secret Code">
+      <button class="btn-track" id="track-btn">Track →</button>
+    </div>
+  </div>
+
+  <div id="track-result">
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:1.5rem;">
+      <div>
+        <div style="font-size:0.75rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;">Status</div>
+        <div id="tr-status-badge"></div>
+      </div>
+      <div style="flex:1;min-width:150px;">
+        <div style="font-size:0.75rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">Category</div>
+        <div style="font-size:1rem; font-weight:bold;" id="tr-category">—</div>
+      </div>
+      <div style="flex:1;min-width:150px;">
+        <div style="font-size:0.75rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">Department</div>
+        <div style="font-size:1rem; font-weight:bold;" id="tr-department">—</div>
+      </div>
+    </div>
+
+    <div style="font-size:0.95rem;color:var(--steel);margin-bottom:8px; line-height:1.5;" id="tr-summary"></div>
+
+    <div class="divider"></div>
+    <h4 style="font-family: var(--display); font-size: 1.1rem; color: var(--ink);">Activity Timeline</h4>
+    <ul class="timeline-list" id="tr-timeline"></ul>
+
+    <!-- Feedback -->
+    <div id="feedback-section" style="display:none;margin-top:2rem; padding: 1.5rem; background: rgba(232,130,26,0.05); border: 1px dashed var(--amber); border-radius: var(--radius);">
+      <div style="font-size:0.9rem;font-weight:bold;color:var(--ink);margin-bottom:10px;">Is this issue resolved?</div>
+      <p style="font-size:0.8rem; color:var(--muted); margin-bottom: 1rem;">Community verification required. Please cast your vote.</p>
+      <div class="feedback-btns">
+        <button class="btn-feedback yes" id="fb-yes">✅ Yes, resolved</button>
+        <button class="btn-feedback no"  id="fb-no">❌ Not resolved</button>
+      </div>
+      <div style="font-size:0.8rem;color:var(--muted);margin-top:10px;font-weight:bold;" id="fb-stats"></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ── FOOTER ──────────────────────────────────────────────────────────────── -->
+<footer>
+  <strong>TrustChain</strong> · Anonymous Civic Grievance Redressal ·
+  Built with Flask + Supabase + GPT-4o ·
+  All data is tamper-resistant
+</footer>
+
+<!-- ── TOAST ──────────────────────────────────────────────────────────────── -->
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+   JAVASCRIPT
+════════════════════════════════════════════════════════════════════════ -->
+<script>
+function showToast(msg, type = 'info', duration = 3500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), duration);
+}
+
+let trackingComplaintId = null;
+
+document.getElementById('track-btn').addEventListener('click', async () => {
+  const id     = document.getElementById('track-id').value.trim();
+  const secret = document.getElementById('track-secret').value.trim();
+
+  if (!id || !secret) {
+    showToast('Enter both Complaint ID and Secret Code', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('track-btn');
+  btn.textContent = 'Tracking…';
+  btn.disabled = true;
+
+  try {
+    const resp = await fetch(`/api/complaints/track?complaint_id=${encodeURIComponent(id)}&secret_code=${encodeURIComponent(secret)}`);
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      showToast(data.error || 'Complaint not found. Check your ID and Secret Code.', 'error');
+      document.getElementById('track-result').style.display = 'none';
+      return;
+    }
+
+    trackingComplaintId = id;
+    const c    = data.complaint || {};
+    const tl   = data.timeline  || [];
+    const fb   = data.feedback  || {};
+
+    document.getElementById('track-result').style.display = 'block';
+    document.getElementById('tr-status-badge').innerHTML = `<span class="status-badge status-${c.status || 'OPEN'}">${c.status || 'OPEN'}</span>`;
+    document.getElementById('tr-category').textContent   = c.category   || '—';
+    document.getElementById('tr-department').textContent = c.department  || '—';
+    document.getElementById('tr-summary').textContent    = c.summary     || c.text?.slice(0, 140) || '—';
+
+    // Timeline
+    const tlEl = document.getElementById('tr-timeline');
+    tlEl.innerHTML = '';
+    tl.forEach(item => {
+      const li = document.createElement('li');
+      li.className = 'timeline-item';
+      const ts   = new Date(item.timestamp).toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short' });
+      const det  = item.details || {};
+      const extra = det.officer_name ? ` → Officer: ${det.officer_name}` : det.new_officer_name ? ` → Officer: ${det.new_officer_name}` : '';
+      li.innerHTML = `
+        <span class="timeline-actor">${item.actor}</span>
+        <span class="timeline-action"> · ${item.action}${extra}</span>
+        <span class="timeline-time">${ts}</span>
+      `;
+      tlEl.appendChild(li);
+    });
+
+    // Feedback section (show if PENDING_VERIFICATION or CLOSED)
+    const fSection = document.getElementById('feedback-section');
+    if (['PENDING_VERIFICATION','CLOSED','REOPENED'].includes(c.status)) {
+      fSection.style.display = 'block';
+      document.getElementById('fb-stats').textContent =
+        `Current Community Votes: ✅ ${fb.resolved || 0} Resolved · ❌ ${fb.not_resolved || 0} Not Resolved`;
+    } else {
+      fSection.style.display = 'none';
+    }
+
+    document.getElementById('track-result').scrollIntoView({ behavior:'smooth' });
+    showToast('Complaint found', 'success');
+
+  } catch (err) {
+    showToast('Network error while tracking', 'error');
+  } finally {
+    btn.textContent = 'Track →';
+    btn.disabled = false;
+  }
+});
+
+// Feedback buttons
+async function submitFeedback(vote) {
+  if (!trackingComplaintId) return;
+  try {
+    const resp = await fetch('/api/complaints/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        complaint_id: trackingComplaintId,
+        vote,
+      }),
+    });
+    const data = await resp.json();
+    showToast(data.message || 'Feedback submitted successfully', 'success');
+    document.getElementById('fb-yes').disabled = true;
+    document.getElementById('fb-no').disabled  = true;
+  } catch {
+    showToast('Failed to submit feedback', 'error');
+  }
+}
+
+document.getElementById('fb-yes').addEventListener('click', () => submitFeedback('resolved'));
+document.getElementById('fb-no').addEventListener('click',  () => submitFeedback('not_resolved'));
+</script>
+
+</body>
+</html>

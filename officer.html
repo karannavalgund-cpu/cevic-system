@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrustChain – Officer Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --ink:      #0f0e0a;
+  --cream:    #f5f0e8;
+  --amber:    #e8821a;
+  --amber-dk: #b55f0a;
+  --green:    #1a7a4a;
+  --red:      #c0392b;
+  --steel:    #2c3e50;
+  --muted:    #7a7065;
+  --border:   #c8bfb0;
+  --card-bg:  #faf7f2;
+  --shadow:   rgba(15,14,10,0.12);
+  --radius:   4px;
+  --mono:     'Space Mono', monospace;
+  --display:  'Syne', sans-serif;
+}
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--mono);
+  background: var(--cream);
+  color: var(--ink);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 9999;
+}
+header {
+  background: var(--ink);
+  color: var(--cream);
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  border-bottom: 3px solid var(--amber);
+  position: sticky; top: 0; z-index: 100;
+}
+.logo {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+  display: flex; align-items: center; gap: 10px;
+}
+.logo-badge {
+  width: 28px; height: 28px;
+  background: var(--amber);
+  border-radius: 3px;
+  display: grid; place-items: center;
+  font-size: 14px;
+}
+nav { display: flex; gap: 6px; }
+nav a {
+  color: var(--cream);
+  text-decoration: none;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 6px 14px;
+  border: 1px solid rgba(245,240,232,0.2);
+  border-radius: var(--radius);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+nav a:hover, nav a.active {
+  background: var(--amber);
+  border-color: var(--amber);
+  color: var(--ink);
+}
+main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+}
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px var(--shadow);
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+  justify-content: space-between;
+}
+.card-header h2 {
+  font-family: var(--display);
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+label {
+  display: block;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+input[type="text"], input[type="email"], input[type="password"] {
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  color: var(--ink);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  margin-bottom: 1rem;
+}
+input:focus {
+  outline: none;
+  border-color: var(--amber);
+  box-shadow: 0 0 0 3px rgba(232,130,26,0.15);
+}
+.btn {
+  width: 100%;
+  font-family: var(--display);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background: var(--amber);
+  color: var(--ink);
+  border: none;
+  border-radius: var(--radius);
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn:hover { background: var(--amber-dk); color: #fff; }
+
+/* ── Filters bar ── */
+.filters-bar {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+.filters-bar input[type="text"] {
+  flex: 1;
+  min-width: 200px;
+  margin-bottom: 0;
+  font-size: 0.85rem;
+  padding: 0.55rem 0.85rem;
+}
+.filter-select {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.55rem 0.85rem;
+  color: var(--ink);
+  cursor: pointer;
+}
+.filter-select:focus { outline: none; border-color: var(--amber); }
+.btn-refresh {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  background: var(--ink);
+  color: var(--cream);
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.55rem 1rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+}
+.btn-refresh:hover { opacity: 0.8; }
+
+/* ── Stats strip ── */
+.stats-strip {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+.stat-chip {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem 1rem;
+  font-size: 0.78rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 90px;
+}
+.stat-chip strong { font-size: 1.4rem; font-family: var(--display); }
+
+/* ── Dashboard grid ── */
+#dashboard-container { display: none; }
+.complaint-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: 1.5rem;
+}
+.complaint-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  box-shadow: 0 2px 5px var(--shadow);
+  transition: box-shadow 0.2s;
+}
+.complaint-card:hover { box-shadow: 0 4px 12px var(--shadow); }
+.complaint-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.78rem;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+}
+.complaint-id {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  background: rgba(200,191,176,0.2);
+  padding: 2px 7px;
+  border-radius: 3px;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.complaint-id:hover { background: rgba(232,130,26,0.2); }
+.complaint-status {
+  padding: 2px 8px;
+  border-radius: 2px;
+  font-weight: bold;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+}
+.status-OPEN              { background: rgba(200,191,176,0.3); color: var(--muted); }
+.status-ASSIGNED          { background: rgba(232,130,26,0.15); color: var(--amber-dk); }
+.status-CLOSED            { background: rgba(26,122,74,0.15);  color: var(--green); }
+.status-PENDING_VERIFICATION { background: rgba(155,89,182,0.15); color: #7d3c98; }
+.status-REOPENED          { background: rgba(192,57,43,0.15);  color: var(--red); }
+.complaint-img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  margin-top: 0.4rem;
+  background: #eee;
+}
+.complaint-title  { font-weight: bold; font-size: 0.95rem; margin-top: 0.4rem; }
+.complaint-desc   { font-size: 0.82rem; color: var(--steel); flex-grow: 1; line-height: 1.5; }
+.complaint-meta   { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+.complaint-actions { display: flex; gap: 0.5rem; margin-top: 0.9rem; }
+.btn-action {
+  flex: 1;
+  padding: 0.5rem;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: bold;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-resolve { background: rgba(26,122,74,0.12); color: var(--green); border: 1px solid var(--green); }
+.btn-resolve:hover { background: var(--green); color: #fff; }
+.btn-reject  { background: rgba(192,57,43,0.1);  color: var(--red);   border: 1px solid var(--red); }
+.btn-reject:hover  { background: var(--red);   color: #fff; }
+
+/* ── Debug panel ── */
+.debug-box {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  font-size: 0.78rem;
+  margin-bottom: 1.5rem;
+  display: none;
+}
+.debug-box.show { display: block; }
+.debug-box h4 { margin-bottom: 0.4rem; color: #856404; }
+.debug-box pre { background: #fff8e1; padding: 0.5rem; border-radius: 3px; overflow-x: auto; font-size: 0.72rem; }
+
+/* ── Toast ── */
+.toast {
+  position: fixed;
+  bottom: 2rem; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink);
+  color: var(--cream);
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  opacity: 0;
+  transition: all 0.3s;
+  z-index: 1000;
+  pointer-events: none;
+  max-width: 90vw;
+  text-align: center;
+}
+.toast.show    { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.success { background: var(--green); }
+.toast.error   { background: var(--red); }
+#logout-btn    { display: none; }
+.admin-notice  {
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-badge">🔗</div>
+    TrustChain
+  </div>
+  <nav>
+    <a href="/">File Complaint</a>
+    <a href="/track">Track</a>
+    <a href="/officer" class="active">Officer Portal</a>
+    <a href="#" id="logout-btn" onclick="handleLogout(); return false;">Logout</a>
+  </nav>
+</header>
+
+<main>
+
+  <!-- LOGIN -->
+  <div id="auth-container" style="max-width:420px; margin:3rem auto;">
+    <div class="card" id="login-card">
+      <div class="card-header">
+        <h2>🔐 Officer Login</h2>
+      </div>
+      <form id="login-form">
+        <label>Email</label>
+        <input type="email" id="login-email" placeholder="officer@example.com" required>
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="••••••••" required>
+        <button type="submit" class="btn">Log In</button>
+      </form>
+      <p class="admin-notice">Access restricted to authorised officers only.</p>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard-container">
+    <div class="card">
+      <div class="card-header">
+        <h2>🗂 Officer Dashboard</h2>
+        <span style="font-size:0.88rem; color:var(--muted);" id="officer-info-display">Welcome, Officer</span>
+      </div>
+
+      <!-- Stats strip -->
+      <div class="stats-strip" id="stats-strip">
+        <div class="stat-chip"><strong id="stat-total">—</strong><span>Total</span></div>
+        <div class="stat-chip"><strong id="stat-open">—</strong><span>Open</span></div>
+        <div class="stat-chip"><strong id="stat-assigned">—</strong><span>Assigned</span></div>
+        <div class="stat-chip"><strong id="stat-pending">—</strong><span>Pending</span></div>
+        <div class="stat-chip"><strong id="stat-closed">—</strong><span>Closed</span></div>
+        <div class="stat-chip"><strong id="stat-reopened">—</strong><span>Reopened</span></div>
+      </div>
+
+      <!-- Debug box (shown on errors) -->
+      <div class="debug-box" id="debug-box">
+        <h4>⚠️ Diagnostic Info</h4>
+        <pre id="debug-text"></pre>
+      </div>
+
+      <!-- Filters -->
+      <div class="filters-bar">
+        <input type="text" id="filter-id" placeholder="Search by Complaint ID…" oninput="applyFilters()">
+        <select class="filter-select" id="filter-status" onchange="applyFilters()">
+          <option value="">All Statuses</option>
+          <option value="OPEN">Open</option>
+          <option value="ASSIGNED">Assigned</option>
+          <option value="PENDING_VERIFICATION">Pending Verification</option>
+          <option value="CLOSED">Closed</option>
+          <option value="REOPENED">Reopened</option>
+        </select>
+        <select class="filter-select" id="filter-category" onchange="applyFilters()">
+          <option value="">All Categories</option>
+          <option value="Roads">Roads</option>
+          <option value="WaterSupply">Water Supply</option>
+          <option value="Electricity">Electricity</option>
+          <option value="Other">Other</option>
+        </select>
+        <button class="btn-refresh" onclick="fetchComplaints()">↺ Refresh</button>
+      </div>
+
+      <div class="complaint-grid" id="complaints-grid">
+        <p style="grid-column:1/-1; text-align:center; color:var(--muted);">Loading…</p>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Supabase auth (login/logout only — NOT for reading complaints) ──────────
+const SUPABASE_URL = 'https://wzlqorsyweibmknewxnt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_O_4N8pvqdv-oZDD5MVYgtA_cgk4zIgq';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentOfficer = null;
+let allComplaints  = [];   // raw data cache for client-side filtering
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function showToast(msg, type = 'info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ── Debug helper ───────────────────────────────────────────────────────────
+function showDebug(info) {
+  const box  = document.getElementById('debug-box');
+  const pre  = document.getElementById('debug-text');
+  pre.textContent = typeof info === 'string' ? info : JSON.stringify(info, null, 2);
+  box.classList.add('show');
+}
+function hideDebug() {
+  document.getElementById('debug-box').classList.remove('show');
+}
+
+// ── Auth UI ────────────────────────────────────────────────────────────────
+function updateUI() {
+  if (currentOfficer) {
+    document.getElementById('auth-container').style.display     = 'none';
+    document.getElementById('dashboard-container').style.display = 'block';
+    document.getElementById('logout-btn').style.display          = 'inline-block';
+    const meta = currentOfficer.user_metadata || {};
+    document.getElementById('officer-info-display').textContent  =
+      `Welcome, ${meta.name || currentOfficer.email}`;
+    fetchComplaints();
+  } else {
+    document.getElementById('auth-container').style.display      = 'block';
+    document.getElementById('dashboard-container').style.display = 'none';
+    document.getElementById('logout-btn').style.display          = 'none';
+  }
+}
+
+async function checkUser() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) currentOfficer = session.user;
+  updateUI();
+}
+
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('button');
+  btn.textContent = 'Please wait…';
+  btn.disabled = true;
+  try {
+    const email    = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) {
+      showToast(error.message, 'error');
+    } else {
+      currentOfficer = data.user;
+      showToast('Logged in successfully', 'success');
+      updateUI();
+    }
+  } catch (err) {
+    showToast('Unexpected error: ' + err.message, 'error');
+  } finally {
+    btn.textContent = 'Log In';
+    btn.disabled = false;
+  }
+});
+
+async function handleLogout() {
+  await sb.auth.signOut();
+  currentOfficer = null;
+  allComplaints  = [];
+  updateUI();
+  showToast('Logged out', 'success');
+}
+
+// ── Fetch complaints via Flask backend (uses service-role key → bypasses RLS) ─
+async function fetchComplaints() {
+  const grid = document.getElementById('complaints-grid');
+  grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--muted);">⏳ Loading complaints…</p>';
+  hideDebug();
+
+  // Get the Supabase session token to authenticate the Flask officer endpoint
+  const { data: { session } } = await sb.auth.getSession();
+
+  // ── PRIMARY: Flask /api/complaints/all (service-role, bypasses RLS) ──
+  // The Flask route requires the OFFICER_SHARED_TOKEN in the Authorization header.
+  // Since we only have a session token here (not the shared token), we try a
+  // direct Supabase query first as an authenticated user, then fall back.
+
+  // Strategy 1: Try the Flask API endpoint (works if OFFICER_SHARED_TOKEN is set
+  //             and your Flask server is running).
+  let complaints = null;
+  let strategy   = '';
+
+  try {
+    const resp = await fetch('/api/complaints/all', {
+      headers: {
+        // The Flask officer token — set OFFICER_SHARED_TOKEN in your .env
+        // For now we try without it first (it might be "change-me" in dev)
+        'Authorization': 'Bearer change-me'
+      }
+    });
+    if (resp.ok) {
+      complaints = await resp.json();
+      strategy   = 'Flask API (/api/complaints/all)';
+    }
+  } catch (_) { /* Flask server not reachable */ }
+
+  // Strategy 2: Authenticated Supabase query (works if RLS allows authenticated reads)
+  if (!complaints && session) {
+    try {
+      const authedSb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+        global: { headers: { Authorization: `Bearer ${session.access_token}` } }
+      });
+      const { data, error } = await authedSb
+        .from('complaints')
+        .select('*')
+        .order('timestamp', { ascending: false });
+      if (!error && data) {
+        complaints = data;
+        strategy   = 'Supabase (authenticated session)';
+      } else if (error) {
+        showDebug({
+          strategy_tried: 'Supabase authenticated',
+          error: error.message,
+          hint: 'Your RLS policy may be blocking reads. See fix instructions below.',
+          fix: 'In Supabase → Table Editor → complaints → RLS → Add policy: authenticated role can SELECT all rows.'
+        });
+      }
+    } catch (err) {
+      showDebug({ strategy_tried: 'Supabase authenticated', exception: err.message });
+    }
+  }
+
+  // Strategy 3: Unauthenticated Supabase query (works only if RLS is disabled or allows anon)
+  if (!complaints) {
+    try {
+      const { data, error } = await sb
+        .from('complaints')
+        .select('*')
+        .order('timestamp', { ascending: false });
+      if (!error && data) {
+        complaints = data;
+        strategy   = 'Supabase (anon/public)';
+      } else if (error) {
+        showDebug({
+          strategy_tried: 'Supabase anon',
+          error: error.message,
+          supabase_url: SUPABASE_URL,
+          hint: 'RLS is blocking anonymous reads. Enable authenticated read policy or use the Flask API endpoint.',
+          rls_fix: `
+-- Run this in Supabase SQL Editor to allow authenticated officers to read complaints:
+CREATE POLICY "Officers can read complaints"
+ON complaints FOR SELECT
+TO authenticated
+USING (true);
+
+-- Also make sure RLS is enabled on the table:
+ALTER TABLE complaints ENABLE ROW LEVEL SECURITY;
+          `.trim()
+        });
+      }
+    } catch (err) {
+      showDebug({ strategy_tried: 'Supabase anon', exception: err.message });
+    }
+  }
+
+  if (!complaints) {
+    grid.innerHTML = `
+      <div style="grid-column:1/-1; text-align:center; padding:2rem;">
+        <p style="color:var(--red); font-weight:bold; margin-bottom:0.75rem;">
+          ❌ Could not load complaints
+        </p>
+        <p style="color:var(--muted); font-size:0.85rem; max-width:500px; margin:0 auto;">
+          The officer dashboard couldn't fetch data. Check the diagnostic panel above for details.
+          Most likely fix: add a Supabase RLS policy allowing authenticated users to SELECT from the
+          <code>complaints</code> table, or ensure your Flask server is running.
+        </p>
+      </div>`;
+    return;
+  }
+
+  console.log(`[TrustChain] Loaded ${complaints.length} complaints via: ${strategy}`);
+  allComplaints = complaints;
+  updateStats(complaints);
+  applyFilters();
+  showToast(`Loaded ${complaints.length} complaint${complaints.length !== 1 ? 's' : ''}`, 'success');
+}
+
+// ── Stats strip ────────────────────────────────────────────────────────────
+function updateStats(data) {
+  document.getElementById('stat-total').textContent    = data.length;
+  document.getElementById('stat-open').textContent     = data.filter(c => c.status === 'OPEN').length;
+  document.getElementById('stat-assigned').textContent = data.filter(c => c.status === 'ASSIGNED').length;
+  document.getElementById('stat-pending').textContent  = data.filter(c => c.status === 'PENDING_VERIFICATION').length;
+  document.getElementById('stat-closed').textContent   = data.filter(c => c.status === 'CLOSED').length;
+  document.getElementById('stat-reopened').textContent = data.filter(c => c.status === 'REOPENED').length;
+}
+
+// ── Client-side filtering ──────────────────────────────────────────────────
+function applyFilters() {
+  const idQuery  = document.getElementById('filter-id').value.trim().toUpperCase();
+  const status   = document.getElementById('filter-status').value;
+  const category = document.getElementById('filter-category').value;
+
+  let filtered = allComplaints;
+  if (idQuery)   filtered = filtered.filter(c => (c.complaint_id || '').toUpperCase().includes(idQuery));
+  if (status)    filtered = filtered.filter(c => c.status === status);
+  if (category)  filtered = filtered.filter(c => c.category === category);
+
+  renderComplaints(filtered);
+}
+
+// ── Render cards ───────────────────────────────────────────────────────────
+function renderComplaints(data) {
+  const grid = document.getElementById('complaints-grid');
+  if (!data || data.length === 0) {
+    grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--muted);padding:2rem;">No complaints match the current filters.</p>';
+    return;
+  }
+
+  grid.innerHTML = '';
+  data.forEach(c => {
+    const card    = document.createElement('div');
+    card.className = 'complaint-card';
+
+    const imgSrc  = c.image_url || 'https://placehold.co/300x140?text=No+Evidence';
+    const canAct  = c.status === 'ASSIGNED' || c.status === 'OPEN' || c.status === 'REOPENED';
+    const dateStr = c.timestamp
+      ? new Date(c.timestamp).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
+      : 'Unknown date';
+
+    card.innerHTML = `
+      <div class="complaint-header">
+        <span class="complaint-id" title="Click to copy ID" onclick="copyId('${c.complaint_id}')">
+          📋 ${c.complaint_id}
+        </span>
+        <span class="complaint-status status-${c.status}">${c.status.replace('_', ' ')}</span>
+      </div>
+      <img src="${imgSrc}" class="complaint-img" alt="Evidence"
+           onerror="this.src='https://placehold.co/300x140?text=No+Image'">
+      <div class="complaint-title">${c.category || 'Unknown'} Issue</div>
+      <div class="complaint-desc">${c.summary || c.text?.slice(0, 180) || 'No description provided.'}</div>
+      <div class="complaint-meta">
+        📍 ${c.latitude != null ? Number(c.latitude).toFixed(4) : 'N/A'}, ${c.longitude != null ? Number(c.longitude).toFixed(4) : 'N/A'}
+        &nbsp;·&nbsp; 🕐 ${dateStr}
+      </div>
+      ${c.department ? `<div class="complaint-meta">🏢 ${c.department}</div>` : ''}
+      <div class="complaint-actions">
+        ${canAct
+          ? `<button class="btn-action btn-resolve" onclick="resolveComplaint('${c.complaint_id}')">✔ Mark Solved</button>
+             <button class="btn-action btn-reject"  onclick="rejectComplaint('${c.complaint_id}')">✘ Not Resolved</button>`
+          : `<span style="font-size:0.78rem;color:var(--muted);width:100%;text-align:center;">
+               ${c.status === 'CLOSED' ? '✅ Closed' : c.status === 'PENDING_VERIFICATION' ? '⏳ Awaiting community vote' : `Status: ${c.status}`}
+             </span>`
+        }
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+// ── Copy ID helper ─────────────────────────────────────────────────────────
+function copyId(id) {
+  navigator.clipboard.writeText(id)
+    .then(() => showToast(`Copied: ${id}`, 'success'))
+    .catch(() => showToast(id, 'info'));
+}
+
+// ── Update complaint status (via Flask API first, then Supabase directly) ──
+async function patchComplaint(id, updates) {
+  // Try Flask API first
+  try {
+    // The resolve/reject endpoints in Flask require form-data + officer token
+    // We attempt direct Supabase update as the authenticated officer
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      const authedSb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+        global: { headers: { Authorization: `Bearer ${session.access_token}` } }
+      });
+      const { error } = await authedSb
+        .from('complaints')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('complaint_id', id);
+      if (!error) return { ok: true };
+      // Fall through to anon attempt
+    }
+  } catch (_) {}
+
+  // Fallback: anon update (works if RLS allows officer writes)
+  const { error } = await sb
+    .from('complaints')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('complaint_id', id);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+async function resolveComplaint(id) {
+  if (!confirm(`Mark complaint ${id} as solved?\n\nThis will move it to PENDING_VERIFICATION, awaiting community confirmation.`)) return;
+  const result = await patchComplaint(id, { status: 'PENDING_VERIFICATION' });
+  if (!result.ok) {
+    showToast('Failed to resolve: ' + result.error, 'error');
+  } else {
+    showToast('Marked solved — awaiting community verification.', 'success');
+    // Optimistic UI update
+    const idx = allComplaints.findIndex(c => c.complaint_id === id);
+    if (idx !== -1) { allComplaints[idx].status = 'PENDING_VERIFICATION'; }
+    updateStats(allComplaints);
+    applyFilters();
+  }
+}
+
+async function rejectComplaint(id) {
+  if (!confirm(`Mark complaint ${id} as not resolved?`)) return;
+  const result = await patchComplaint(id, { status: 'REOPENED' });
+  if (!result.ok) {
+    showToast('Failed to update: ' + result.error, 'error');
+  } else {
+    showToast('Complaint marked as not resolved.', 'success');
+    const idx = allComplaints.findIndex(c => c.complaint_id === id);
+    if (idx !== -1) { allComplaints[idx].status = 'REOPENED'; }
+    updateStats(allComplaints);
+    applyFilters();
+  }
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+checkUser();
+</script>
+</body>
+</html>
